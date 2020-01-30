@@ -1,19 +1,41 @@
 from urllib.parse import urlparse
+from bs4 import BeautifulSoup
 import aiohttp
 import asyncio
 
 
-def check_if_internal_link(base, link):
-  """
-    Returns whether the given link is hosted in the same
-    server as the base link and if they have the same 
-    scheme (http, https, ftp...)
-  """
-  base = urlparse(base)
-  link = urlparse(link)
+class WebScraper:
+  def __init__(self, html):
+    self.soup = BeautifulSoup(html, features="html.parser")
 
-  return base.scheme == link.scheme \
-     and base.hostname == link.hostname
+
+  def get_text(self):
+    return self.soup.get_text()
+
+
+  def get_title(self):
+    title = self.soup.find("h1")
+
+    if title is None:
+      title = self.soup.title
+    if title is not None:
+      title = title.get_text()
+
+    return title
+
+
+  def get_internal_links(self, base_url):
+    base = urlparse(base_url)
+
+    def check_if_internal_link(link):
+      link = urlparse(link)
+
+      return base.scheme == link.scheme \
+        and base.hostname == link.hostname
+    
+    return [a.get('href')
+          for a in self.soup.find_all('a', href=check_if_internal_link)]
+
 
 
 def get_initial_urls():
@@ -28,35 +50,58 @@ def get_initial_urls():
     return url_list
 
 
-async def fetch(session, url):
-  """
-    Tries to fetch the web page of the given URL and
-    returns the status code and the content if the
-    status is 200. If there is any connection error 
-    it returns -1 as response status
-  """
+
+processed_urls = set()
+
+async def process_url(session, url, depth):
+  if url in processed_urls: 
+    return
+  else:
+    processed_urls.add(url)
+    print(f"New URL. Depth={depth}. URL={url}")
+
   try:
     async with session.get(url) as response:
       if response.status == 200:
-        text = await response.text()
-        return text, response.status
+        html = await response.text()
+        scrapper = WebScraper(html)
+        title = scrapper.get_title()
+        text = scrapper.get_text()
+        internal_links = scrapper.get_internal_links(url)
+        internal_links = [link for link in internal_links if link not in processed_urls]
+
+        with open("test.txt", "a") as file:
+          file.write(f"URL: {url}. Status: {response.status}. Title: {title}.\n")
+        
+        await process_all_urls(internal_links, depth + 1)
+      
       else:
-        return "", response.status
+        with open("test_error.txt", "a") as file:
+          file.write(f"URL: {url}. Status: {response.status}.\n")
+
   except:
-    return "", -1
+    with open("test_error.txt", "a") as file:
+      file.write(f"URL: {url}. Status: -1.\n")
 
 
-async def main():
-  urls = get_initial_urls()
+
+async def process_all_urls(urls, depth=1):
+  if depth > 3: return
+
   timeout = aiohttp.ClientTimeout(total=60)
 
   async with aiohttp.ClientSession(timeout=timeout) as session:
-    response_promises = [fetch(session, url) for url in urls]
-    responses = await asyncio.gather(*response_promises)
+    promises = [process_url(session, url, depth) for url in urls]
+    await asyncio.gather(*promises)
 
-    print("\n\n\n")
-    for text, status in responses:
-      print("Body:", text[:15].strip(), "...", "Size:", len(text), "Status:", status)
+
+
+async def main():
+  # initial_urls = ["https://en.wikipedia.org/wiki/Web_scraping"] 
+  # initial_urls = [f"https://swapi.co/api/people/{i}" for i in range(1, 3)] 
+  initial_urls = get_initial_urls()
+  await process_all_urls(initial_urls)
+
 
 
 if __name__ == "__main__":
