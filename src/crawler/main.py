@@ -51,56 +51,90 @@ def get_initial_urls():
 
 
 
-processed_urls = set()
+class WebpageProcessor:
+  def __init__(self, webpage_store):
+    self.store = webpage_store
 
-async def process_url(session, url, depth):
-  if url in processed_urls: 
-    return
-  else:
-    processed_urls.add(url)
-    print(f"New URL. Depth={depth}. URL={url}")
 
-  try:
-    async with session.get(url) as response:
-      if response.status == 200:
-        html = await response.text()
-        scrapper = WebScraper(html)
-        title = scrapper.get_title()
-        text = scrapper.get_text()
-        internal_links = scrapper.get_internal_links(url)
-        internal_links = [link for link in internal_links if link not in processed_urls]
+  async def process_success(self, url, status, html):
+    scrapper = WebScraper(html)
+    title = scrapper.get_title()
+    text = scrapper.get_text()
+    internal_links = scrapper.get_internal_links(url)
+    
+    await self.store.store_success_page(url, title, text)
+          
+    return internal_links
 
-        with open("test.txt", "a") as file:
-          file.write(f"URL: {url}. Status: {response.status}. Title: {title}.\n")
-        
-        await process_all_urls(internal_links, depth + 1)
-      
-      else:
-        with open("test_error.txt", "a") as file:
-          file.write(f"URL: {url}. Status: {response.status}.\n")
 
-  except:
+  async def process_error(self, url, status):
+    await self.store.store_error_page(url, status)
+
+
+
+class WebpageStore:
+  async def store_success_page(self, url, title, text):
+    with open("test.txt", "a") as file:
+      file.write(f"URL: {url}. Title: {title}.\n")
+  
+  async def store_error_page(self, url, status):
     with open("test_error.txt", "a") as file:
-      file.write(f"URL: {url}. Status: -1.\n")
+      file.write(f"URL: {url}. Status: {status}.\n")
 
 
 
-async def process_all_urls(urls, depth=1):
-  if depth > 3: return
+class Crawler:
+  def __init__(self, page_processor, max_depth=1, timeout=60, verbose=False):
+    self.page_processor = page_processor
+    self.max_depth = max_depth
+    self.timeout = aiohttp.ClientTimeout(total=timeout)
+    self.verbose = verbose
 
-  timeout = aiohttp.ClientTimeout(total=60)
 
-  async with aiohttp.ClientSession(timeout=timeout) as session:
-    promises = [process_url(session, url, depth) for url in urls]
-    await asyncio.gather(*promises)
+  async def run(self, initial_urls):
+    self.processed_urls = set()
+
+    return await self._process_all_urls(initial_urls)
+
+
+  async def _process_all_urls(self, urls, depth=1):
+    if depth > self.max_depth: 
+      return
+
+    async with aiohttp.ClientSession(timeout=self.timeout) as session:
+      promises = [self._process_url(session, url, depth) for url in urls]
+      await asyncio.gather(*promises)
+
+    
+  async def _process_url(self, session, url, depth):
+    if url in self.processed_urls: 
+      return
+    else:
+      self.processed_urls.add(url)
+      if self.verbose: print(f"New URL. Depth={depth}. URL={url}")
+
+    try:
+      async with session.get(url) as response:
+        if response.status == 200:
+          html = await response.text()
+          links = await self.page_processor.process_success(url, response.status, html)
+          links = [link for link in links if link not in self.processed_urls]
+          await self._process_all_urls(links, depth + 1)
+        else:
+          await self.page_processor.process_error(url, response.status)
+    except:
+      await self.page_processor.process_error(url, -1)
 
 
 
 async def main():
+  webpage_store = WebpageStore()
+  webpage_processor = WebpageProcessor(webpage_store)
+  crawler = Crawler(webpage_processor, max_depth=3, verbose=True)
   # initial_urls = ["https://en.wikipedia.org/wiki/Web_scraping"] 
   # initial_urls = [f"https://swapi.co/api/people/{i}" for i in range(1, 3)] 
   initial_urls = get_initial_urls()
-  await process_all_urls(initial_urls)
+  await crawler.run(initial_urls)
 
 
 
