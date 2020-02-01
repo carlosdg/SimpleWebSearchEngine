@@ -33,7 +33,7 @@ class WebScraper:
             link = urlparse(link)
 
             return base.scheme == link.scheme \
-                and base.hostname == link.hostname
+                and base.netloc == link.netloc
 
         return [a.get('href')
                 for a in self.soup.find_all('a', href=check_if_internal_link)]

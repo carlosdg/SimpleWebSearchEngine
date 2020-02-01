@@ -1,8 +1,10 @@
+import os
 import asyncio
 import motor.motor_asyncio
 from umongo import Instance, Document, fields
 
-db = motor.motor_asyncio.AsyncIOMotorClient('mongodb', 27017)['db']
+MONGO_URL = os.getenv('MONGO_URL', 'mongodb://root:root@mongodb:27017')
+db = motor.motor_asyncio.AsyncIOMotorClient(MONGO_URL)["admin"]
 instance = Instance(db)
 
 

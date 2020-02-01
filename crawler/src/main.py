@@ -1,3 +1,4 @@
+import os
 from Crawler import Crawler
 from WebpageProcessor import WebpageProcessor
 from WebpageStore import WebpageStore
@@ -9,7 +10,8 @@ def get_initial_urls():
       Reads the file with the starting URLs and returns
       a list of these
     """
-    with open("config/urls.txt") as urls_file:
+    URLS_FILE_PATH = os.getenv("INITIAL_URLS_FILE_PATH", "../config/urls.txt")
+    with open(URLS_FILE_PATH) as urls_file:
         url_list = urls_file.read().split("\n")
         url_list = [url.strip() for url in url_list]
 

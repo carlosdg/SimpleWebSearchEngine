@@ -23,6 +23,9 @@ services:
     volumes:
       - ./crawler:/container
     working_dir: /container
+    environment:
+      - MONGO_URL=mongodb://root:root@mongodb:27017
+      - INITIAL_URLS_FILE_PATH=/container/config/urls.txt
     command: ["/bin/bash"]
     stdin_open: true
     tty: true
