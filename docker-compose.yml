@@ -10,11 +10,13 @@ services:
     volumes:
       - ./mongo:/data/db
     environment:
-      - MONGO_INITDB_DATABASE=db
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=root
 
+  # Access this container with `docker-compose exec crawler /bin/bash`
   crawler:
     build: ./crawler
-    image: python-crawler
+    image: simple_search_engine__crawler
     depends_on:
       - mongodb
     restart: always
@@ -24,3 +26,19 @@ services:
     command: ["/bin/bash"]
     stdin_open: true
     tty: true
+
+  api:
+    build: ./api
+    image: simple_search_engine__api
+    depends_on:
+      - mongodb
+    restart: always
+    ports:
+      - 3000:3000
+    volumes:
+      - ./api:/container
+    working_dir: /container
+    command: ["yarn", "dev"]
+    environment:
+      - MONGO_URL=mongodb://root:root@mongodb:27017/admin
+      - PORT=3000
