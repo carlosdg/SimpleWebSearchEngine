@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const express = require("express");
 const bodyParser = require("body-parser");
+const cors = require("cors");
 const escapeRegExp = require("lodash.escaperegexp");
 
 mongoose.connect(
@@ -10,6 +11,7 @@ mongoose.connect(
 
 const PORT = process.env.PORT || 3000;
 const app = express();
+app.use(cors());
 app.use(bodyParser.json());
 
 /**
@@ -27,7 +29,7 @@ app.post("/api/v1.0.0/search", (req, res) => {
 
   mongoose.connection.db.collection("success_page", (error, collection) => {
     if (error) {
-      res.send({ payload: "Error connecting to database" });
+      res.send({ payload: [], error: "Error connecting to database" });
     } else {
       collection
         .find({
@@ -39,9 +41,9 @@ app.post("/api/v1.0.0/search", (req, res) => {
         })
         .toArray((error, results) => {
           if (error) {
-            res.send({ payload: "Error retrieving results" });
+            res.send({ payload: [], error: "Error retrieving results" });
           } else {
-            res.send({ payload: results });
+            res.send({ payload: results, error: null });
           }
         });
     }

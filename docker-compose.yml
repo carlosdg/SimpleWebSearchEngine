@@ -37,11 +37,11 @@ services:
       - mongodb
     restart: always
     ports:
-      - 3000:3000
+      - 3456:3456
     volumes:
       - ./api:/container
     working_dir: /container
     command: ["yarn", "dev"]
     environment:
       - MONGO_URL=mongodb://root:root@mongodb:27017/admin
-      - PORT=3000
+      - PORT=3456
