@@ -45,3 +45,23 @@ services:
     environment:
       - MONGO_URL=mongodb://root:root@mongodb:27017/admin
       - PORT=3456
+
+  web:
+    build:
+      context: ./web
+      args:
+        - REACT_APP_API_URL=http://localhost:3456/api/v1.0.0/search
+    image: simple_search_engine__web
+    depends_on:
+      - mongodb
+      - api
+    restart: always
+    ports:
+      - 3000:3000
+    volumes:
+      - ./web:/container
+    working_dir: /container
+    command: ["yarn", "start"]
+    environment:
+      - REACT_APP_API_URL=http://localhost:3456/api/v1.0.0/search
+      - PORT=3000
