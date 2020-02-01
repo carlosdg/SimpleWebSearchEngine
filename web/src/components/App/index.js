@@ -20,16 +20,28 @@ function App() {
   return (
     <>
       <SearchBar onUserInput={onUserInput} />
+      <section
+        className="section"
+        style={{ paddingTop: "0.5rem", paddingBottom: 0 }}
+      >
+        <div className="container">
+          <div>About {pagesRequest.payload.length} results below</div>
+        </div>
+      </section>
       <section className="section">
-        {pagesRequest.loading ? (
-          <LoadSpinner />
-        ) : pagesRequest.error ? (
-          <div>{pagesRequest.error}</div>
-        ) : (
-          pagesRequest.payload.map(pageInfo => (
-            <PageResult key={pageInfo.url} pageInfo={pageInfo}></PageResult>
-          ))
-        )}
+        <div className="container">
+          {pagesRequest.loading ? (
+            <LoadSpinner />
+          ) : pagesRequest.error ? (
+            <div>{pagesRequest.error}</div>
+          ) : (
+            <>
+              {pagesRequest.payload.map(pageInfo => (
+                <PageResult key={pageInfo.url} pageInfo={pageInfo}></PageResult>
+              ))}
+            </>
+          )}
+        </div>
       </section>
     </>
   );

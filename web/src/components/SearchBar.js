@@ -4,7 +4,7 @@ function SearchBar({ onUserInput }) {
   const [filter, setFilter] = React.useState("");
 
   return (
-    <section className="section">
+    <section className="section" style={{ paddingBottom: 0 }}>
       <div className="container">
         <div className="field has-addons">
           <div className="control is-expanded">
