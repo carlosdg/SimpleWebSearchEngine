@@ -1,0 +1,22 @@
+.LoadSpinner__container {
+  display: flex;
+  justify-content: center;
+}
+
+.LoadSpinner__spinner {
+  width: 3rem;
+  height: 3rem;
+  border: 0.5rem solid #f3f3f3;
+  border-top: 0.5rem solid #3298dc;
+  border-radius: 50%;
+  animation: LoadSpinner__spin 1s linear infinite;
+}
+
+@keyframes LoadSpinner__spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

@@ -1,0 +1,22 @@
+.PageResult__container {
+  padding: 0.5rem;
+  border-radius: 5px;
+}
+.PageResult__container:hover {
+  background-color: #eee;
+  cursor: pointer;
+}
+.PageResult__container:hover > .PageResult__title {
+  text-decoration: underline;
+}
+
+.PageResult__url {
+  font-size: 0.7rem;
+}
+.PageResult__title {
+  font-size: 1.2rem;
+  color: #3298dc;
+}
+.PageResult__description {
+  font-size: 0.8rem;
+}
