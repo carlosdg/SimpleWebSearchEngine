@@ -14,17 +14,17 @@ class WebScraper:
         self.soup = BeautifulSoup(html, features="html.parser")
 
     def get_text(self):
+        """
+            Warning: This modifies the given HTML string!!
+        """
+        tags_to_remove = ["script", "head", "img", "figure", "style"]
+        for tag in tags_to_remove:
+            [el.extract() for el in self.soup.findAll(tag)]
+
         return self.soup.get_text()
 
     def get_title(self):
-        title = self.soup.find("h1")
-
-        if title is None:
-            title = self.soup.title
-        if title is not None:
-            title = title.get_text()
-
-        return title
+        return self.soup.title.get_text().strip()
 
     def get_internal_links(self, base_url):
         base = urlparse(base_url)
@@ -52,9 +52,9 @@ class WebpageProcessor:
 
     async def process_success(self, url, status, html):
         scrapper = WebScraper(html)
+        internal_links = scrapper.get_internal_links(url)
         title = scrapper.get_title()
         text = scrapper.get_text()
-        internal_links = scrapper.get_internal_links(url)
 
         await self.store.store_success_page(url, title, text)
 
